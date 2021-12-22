@@ -12,7 +12,7 @@ public class EventManager
 
     public int On(string tag, Action<BaseEvent> listener)
     {
-        if (this.listeners[tag] == null)
+        if (!this.listeners.ContainsKey(tag))
         {
             this.listeners[tag] = new Dictionary<int, Action<BaseEvent>>();
         }
@@ -37,7 +37,7 @@ public class EventManager
 
     public void Emit(string tag, BaseEvent eventArgs)
     {
-        if (listeners.ContainsKey(tag)) return;
+        if (!listeners.ContainsKey(tag)) return;
         foreach (Action<BaseEvent> action in this.listeners[tag].Values)
         {
             action.Invoke(eventArgs);
