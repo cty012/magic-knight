@@ -14,7 +14,8 @@
 1. For game objects, they need to use `Rect Transform` component instead of normal `Transform` (Just directly add the `Rect Transform` component).
 2. For Non-sprite objects (Map, Terrain, Enemy, etc.), set `Pivot` to be *(0, 0)* so that objects can use them as references. For sprite objects (Player, Slime1, Ground1, etc.), set `pivot` to be *(0.5, 0.5)* so that the sprite can be rendered correctly.
 3. However, if the position of the sprite doesn't matter (*XxxManager*) then you can use the normal `Transform` and set everything to *0*.
-3. When resizing an object, change the `Scale` property instead of changing the `Width` and `Height` properties. Otherwise the `Sprite` will not be resized. (The `Width` and `Height` properties should both be kept at *1*).
+4. When resizing an object, change the `Scale` property instead of changing the `Width` and `Height` properties. Otherwise the `Sprite` will not be resized. (The `Width` and `Height` properties should both be kept at *1*).
+5. Map and world coordinates are now aligned.
 ## Scripts
 1. Keep track of the console messages you add during debugging. You do not want to leave behind debugging messages that are too verbose. (btw `Debug.Log()` is how to log messages in Unity)
 2. Unity supports checking the state and hierarchy of the scene and nodes during runtime. Make good use of that when debugging your code.

@@ -1,9 +1,13 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    // Event id from event manager
+    private int eventId;
+
     // Useful components
     public new Rigidbody2D rigidbody { get; private set; }
     public new Collider2D collider { get; private set; }
@@ -11,7 +15,7 @@ public class PlayerController : MonoBehaviour
     public SpriteRenderer spriteRenderer { get; private set; }
 
     // Child nodes
-    public GameObject weapon { get; set; }
+    public GameObject weapon { get; private set; }
 
     // Controll keys
     private KeyCode keyUp;
@@ -28,7 +32,8 @@ public class PlayerController : MonoBehaviour
 
     // Player orientation (always face right at the beginning)
     private bool _facingRight;
-    public bool facingRight {
+    public bool facingRight
+    {
         get { return this._facingRight; }
         private set
         {
@@ -56,14 +61,41 @@ public class PlayerController : MonoBehaviour
     private bool sprintingRight;
 
     // hp
-    public int hp { get; set; }
-    public int maxHp { get; set; }
+    private int _hp;
+    public int hp
+    {
+        get { return this._hp; }
+        set
+        {
+            this._hp = value.Clamp(0, maxHp);
+            EventManager.instance.Emit("hp-change", new PlayerStatusChangeEvent(
+                PlayerStatusChangeEventType.HP_CHANGE, this._hp));
+        }
+    }
+    private int _maxHp;
+    public int maxHp
+    {
+        get { return this._maxHp; }
+        set
+        {
+            this._maxHp = Math.Max(value, 0);
+            this.hp = Math.Min(this.hp, this._maxHp);
+        }
+    }
+
+    // Defence
+    private int physicalDefence;
+    private float physicalResist;
+    private int magicalDefence;
+    private float magicalResist;
 
     // inventory TODO
 
     // Reset is called when the script is attached to a game object
     void Awake()
     {
+        this.eventId = 0;
+
         this.rigidbody = this.GetComponent<Rigidbody2D>();
         this.collider = this.GetComponent<Collider2D>();
         this.transform = this.GetComponent<RectTransform>();
@@ -82,39 +114,64 @@ public class PlayerController : MonoBehaviour
 
         this.facingRight = true;
 
-        this.moveStep = 250.0f;
+        this.moveStep = 250;
 
         this.curJumpNum = 0;
         this.maxJumpNum = 1;
-        this.jumpStep = 1000.0f;
-        this.maxVertStep = 2500.0f;
+        this.jumpStep = 1000;
+        this.maxVertStep = 2500;
 
         this.allowSprint = true;
-        this.sprintStep = 1200.0f;
-        this.curSprintTime = 0.0f;
-        this.maxSprintTime = 0.20f;
-        this.curSprintCD = 0.0f;
-        this.maxSprintCD = 2.0f;
+        this.sprintStep = 1500;
+        this.curSprintTime = 0;
+        this.maxSprintTime = 0.15f;
+        this.curSprintCD = 0;
+        this.maxSprintCD = 2;
         this.sprintingRight = true;
 
         this.maxHp = 100;
         this.hp = this.maxHp;
+
+        this.physicalDefence = 0;
+        this.physicalResist = 2;
+        this.magicalDefence = 0;
+        this.magicalResist = 1.2f;
 
         // Attach weapon TODO
     }
 
     void Start()
     {
-        // Register event listeners
-
+        this.eventId = EventManager.instance.On("attack-player",
+            (BaseEvent eventArgs) => { this.OnAttacked((AttackPlayerEvent)eventArgs); });
     }
 
     private void OnDestroy()
     {
-        // Unregister the event listeners
+        EventManager.instance.Off(this.eventId);
     }
 
-    // OnAttacked TODO
+    private void OnAttacked(AttackPlayerEvent eventArgs)
+    {
+        int damage = 0;
+        switch (eventArgs.type)
+        {
+            case AttackPlayerEventType.PHYSICAL_ATTACK:
+                damage = (eventArgs.power > this.physicalDefence) ?
+                    (int)Math.Ceiling(this.physicalDefence / (double)this.physicalResist) + eventArgs.power - this.physicalDefence :
+                    (int)Math.Ceiling(eventArgs.power / (double)this.physicalResist);
+                break;
+            case AttackPlayerEventType.MAGICAL_ATTACK:
+                damage = (eventArgs.power > this.magicalDefence) ?
+                    (int)Math.Ceiling(this.magicalDefence / (double)this.magicalResist) + eventArgs.power - this.magicalDefence :
+                    (int)Math.Ceiling(eventArgs.power / (double)this.magicalResist);
+                break;
+            case AttackPlayerEventType.DIRECT_DAMAGE:
+                damage = eventArgs.power;
+                break;
+        }
+        this.hp -= damage;
+    }
 
     private void GetKeyboardInput()
     {
@@ -141,13 +198,10 @@ public class PlayerController : MonoBehaviour
     // Check if player is on the ground
     private void CheckGrounded()
     {
-        // TODO: add get rect to the utils
-        Vector2 start = new Vector2(
-            this.transform.rect.xMin * this.transform.localScale.x + this.transform.position.x,
-            this.transform.rect.yMin * this.transform.localScale.y + this.transform.position.y - 0.2f
-        );
-        Vector2 end = new Vector2(start.x + this.transform.localScale.x, start.y + 0.1f);
-        if (Physics2D.OverlapArea(start, end))
+        Vector2 start = this.transform.GetWorldPointAtBottomLeft().Add(new Vector2(1, -1));
+        Vector2 end = this.transform.GetWorldPointByAnchor(new Vector2(1, 0)).Add(new Vector2(-1, 0));
+        Collider2D[] colliders = Physics2D.OverlapAreaAll(start, end);
+        if (colliders.Length > 1 || colliders.Length == 1 && !"Player".Equals(colliders[0].name))
         {
             this.drop = false;
             this.curJumpNum = this.maxJumpNum;
@@ -157,8 +211,8 @@ public class PlayerController : MonoBehaviour
     // Update all time and cd by subtracting deltaTime
     void UpdateCD()
     {
-        curSprintTime = System.Math.Max(curSprintTime - Time.deltaTime, 0);
-        curSprintCD = System.Math.Max(curSprintCD - Time.deltaTime, 0);
+        curSprintTime = Math.Max(curSprintTime - Time.deltaTime, 0);
+        curSprintCD = Math.Max(curSprintCD - Time.deltaTime, 0);
     }
 
     void Update()
@@ -168,7 +222,7 @@ public class PlayerController : MonoBehaviour
         if (curSprintTime > 0)
         {
             int sprintDirection = this.sprintingRight ? 1 : -1;
-            this.rigidbody.velocity = new Vector2(this.sprintStep * sprintDirection, 0.0f);
+            this.rigidbody.velocity = new Vector2(this.sprintStep * sprintDirection, 0);
         }
         else
         {
@@ -191,7 +245,7 @@ public class PlayerController : MonoBehaviour
             }
 
             // make sure y direction has speed less than this.verticalMaxStep
-            velocity.y = System.Math.Min(System.Math.Max(velocity.y, -this.maxVertStep), this.maxVertStep);
+            velocity.y = Math.Min(Math.Max(velocity.y, -this.maxVertStep), this.maxVertStep);
 
             // apply the calculated velocity
             this.rigidbody.velocity = velocity;
