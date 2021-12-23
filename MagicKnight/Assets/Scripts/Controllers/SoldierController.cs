@@ -5,44 +5,14 @@ using UnityEngine;
 
 public class SoldierController : EnemyController
 {
-
+    [Header("Soldier Settings")]
     // Attack
-    private Timer attackCD;
-
-    // the soldier is freezed for a certain amount of time if attacked
-    private Timer freezeTimer;
-
-    protected override void Awake()
-    {
-        base.Awake();
-
-        // Fields defined in CharacterController
-        this.maxHp = 100;
-        this.hp = this.maxHp;
-
-        this.physicalDefence = 0;
-        this.physicalResist = 2;
-        this.magicalDefence = 0;
-        this.magicalResist = 1.2f;
-
-        this.knockback = new Timer(0, 500);
-        this.knockbackResist = 1.2f;
-
-        // Fields defined in EnemyController
-        this.horiDetectionDist = 700;
-        this.vertDetectionDist = 180;
-        this.attackDist = 60;
-        this.moveStep = 150;
-
-        // Fields defined in SoldierController
-        this.attackCD = new Timer(1.5f);
-        this.freezeTimer = new Timer(0.5f);
-    }
+    public Timer attackCD;
 
     public override void OnAttacked(AttackType type, int power)
     {
         base.OnAttacked(type, power);
-        this.freezeTimer.Reset();
+        this.freezeTime.Reset();
     }
 
     protected override void Move()
@@ -86,11 +56,6 @@ public class SoldierController : EnemyController
 
     protected override void UpdateTimers()
     {
-        if (!this.freezeTimer.stopped)
-        {
-            this.freezeTimer.Update();
-            return;
-        }
         base.UpdateTimers();
         this.attackCD.Update();
     }

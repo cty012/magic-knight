@@ -1,9 +1,8 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerController : CharacterController
+public class PlayerController : MovableController
 {
     // Controll keys
     private KeyCode keyUp;
@@ -57,18 +56,6 @@ public class PlayerController : CharacterController
     protected override void Awake()
     {
         base.Awake();
-
-        // Fields defined in CharacterController
-        this.maxHp = 100;
-        this.hp = this.maxHp;
-
-        this.physicalDefence = 0;
-        this.physicalResist = 2;
-        this.magicalDefence = 0;
-        this.magicalResist = 1.2f;
-
-        this.knockback = new Timer(0, 700);
-        this.knockbackResist = 1.2f;
         
         // Fields defined in PlayerController
         this.weaponAnchor = new Vector2(0.9f, 0.55f);

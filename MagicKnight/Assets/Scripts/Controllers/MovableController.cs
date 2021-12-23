@@ -3,7 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class CharacterController : MonoBehaviour
+// Base class of all movable characters
+public abstract class MovableController : MonoBehaviour
 {
     // Useful components
     public new RectTransform transform { get; protected set; }
@@ -61,14 +62,20 @@ public abstract class CharacterController : MonoBehaviour
         }
     }
 
-    // Defence (NEED TO CUSTOMIZE ALL FIElDS IN THIS SECTION)
-    protected int physicalDefence;
-    protected float physicalResist;
-    protected int magicalDefence;
-    protected float magicalResist;
+    [Header("Health Settings")]
+    public int maximumHp;
 
+    // Defence (NEED TO CUSTOMIZE ALL FIElDS IN THIS SECTION)
+    [Header("Defence Settings")]
+    public int physicalDefence;
+    public float physicalResist;
+    public int magicalDefence;
+    public float magicalResist;
+
+    [Header("Knockback Settings")]
+    public float knockbackResist;
+    public float knockbackDecay;
     protected Timer knockback;
-    protected float knockbackResist;
 
     // Reset is called when the script is attached to a game object
     protected virtual void Awake()
@@ -83,6 +90,11 @@ public abstract class CharacterController : MonoBehaviour
         this.facingRight = true;
 
         this.onGround = false;
+
+        this.hp = this.maximumHp;
+        this.maxHp = this.maximumHp;
+
+        this.knockback = new Timer(0, this.knockbackDecay);
     }
 
     // Assign a weapon to the character
@@ -99,7 +111,7 @@ public abstract class CharacterController : MonoBehaviour
         // Monogamy
         if (controller?.userController != null) controller.userController.weaponController = null;
 
-        // Create relationship
+        // Create link
         this.weaponController = controller;
         controller.userController = this;
 

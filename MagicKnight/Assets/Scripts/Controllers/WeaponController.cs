@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,7 +7,7 @@ using UnityEngine;
 public abstract class WeaponController : MonoBehaviour
 {
     // The object using the weapon
-    public CharacterController userController { get; set; }
+    public MovableController userController { get; set; }
 
     // Useful components
     public new RectTransform transform { get; private set; }
@@ -42,6 +43,7 @@ public abstract class WeaponController : MonoBehaviour
     // Power
     public int attackPower;
     public int pushPower;
+    public float freezePower;
 
     protected virtual void Awake()
     {
@@ -58,8 +60,8 @@ public abstract class WeaponController : MonoBehaviour
 
     protected virtual void Start()
     {
-        // Intend to get derived classes of CharacterController such as PlayerController or EnemyController
-        this.transform.parent?.gameObject?.GetComponent<CharacterController>()?.AssignWeapon(this);
+        // Intend to get derived classes of MovableController such as PlayerController or EnemyController
+        this.transform.parent?.gameObject?.GetComponent<MovableController>()?.AssignWeapon(this);
     }
 
     // Callback of collision
@@ -68,7 +70,7 @@ public abstract class WeaponController : MonoBehaviour
         if (this.isAttacking && this.userController != null && this.userController.IsHostile(otherCollider.gameObject) && !this.attackedObjects.Contains(otherCollider.gameObject))
         {
             // Attack and push the hostile target
-            CharacterController controller = otherCollider.gameObject.GetComponent<CharacterController>();
+            MovableController controller = otherCollider.gameObject.GetComponent<MovableController>();
             if (controller == null) return;
             // Attack and push the hostile target
             controller.OnAttacked(AttackType.PHYSICAl_ATTACK, this.attackPower);
@@ -76,13 +78,17 @@ public abstract class WeaponController : MonoBehaviour
                 this.userController.transform.position.DropZ(),
                 controller.transform.position.DropZ()).x;
             controller.OnPushed(PushType.NORMAL_PUSH, this.pushPower * direction);
+            // Freeze the hostile target if it is an Enemy
+            if (controller is EnemyController enemyController) enemyController.Freeze(this.freezePower);
             // Add the hostile target to the list to avoid inflicting further damage
             this.attackedObjects.Add(otherCollider.gameObject);
         }
     }
     
+    // Execute the attack command
     public abstract void Attack();
 
+    // Update the postion of the weapon
     protected abstract void Move();
 
     protected virtual void UpdateTimers() { }
