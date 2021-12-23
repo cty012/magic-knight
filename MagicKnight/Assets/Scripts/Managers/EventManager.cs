@@ -10,8 +10,13 @@ public class EventManager
     
     private EventManager() { }
 
+    // Registers a listener (a function)
+    // Specify the tag you want to listen to
+    // The returned id refers to the registered listener
     public int On(string tag, Action<BaseEvent> listener)
     {
+        // Skip empty tags
+        if ("".Equals(tag)) return 0;
         if (!this.listeners.ContainsKey(tag))
         {
             this.listeners[tag] = new Dictionary<int, Action<BaseEvent>>();
@@ -21,6 +26,8 @@ public class EventManager
         return id;
     }
 
+    // Unregister a listener
+    // Uses the id you get when registering
     public bool Off(int id)
     {
         foreach (string tag in listeners.Keys)
@@ -35,6 +42,8 @@ public class EventManager
         return false;
     }
 
+    // Emits an event
+    // All listeners on the same tag will be invoked
     public void Emit(string tag, BaseEvent eventArgs)
     {
         if (!listeners.ContainsKey(tag)) return;
@@ -45,6 +54,7 @@ public class EventManager
     }
 }
 
+// All events should extend the BaseEvent
 public class BaseEvent
 {
     public readonly Enum type;
