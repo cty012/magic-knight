@@ -15,5 +15,6 @@ public class PlayerStatusChangeEvent : BaseEvent
 public enum PlayerStatusChangeEventType
 {
     HP_CHANGE,
-    MP_CHANGE
+    MP_CHANGE,
+    XP_CHANGE
 }

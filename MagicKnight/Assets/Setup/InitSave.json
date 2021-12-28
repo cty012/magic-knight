@@ -1,0 +1,17 @@
+{
+    "player": {
+        "attr": {
+            "hp": ["int", 100],
+            "mp": ["int", 0],
+            "xp": ["int", 0]
+        },
+        "weapon": ["string", "Sword"]
+    },
+    "npc": {
+        "narrator": [{"type": "bool"}]
+    },
+    "scene": {
+        "name": ["string", "Map1"],
+        "checkpoint": ["int", 0]
+    }
+}

@@ -155,4 +155,6 @@ MonoBehaviour:
   idleRotation: 0
   startRotation: -20
   endRotation: -170
-  attackTime: 0.2
+  attackTime:
+    maxValue: 0.2
+    speed: 1

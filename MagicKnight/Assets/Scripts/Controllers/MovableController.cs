@@ -100,6 +100,9 @@ public abstract class MovableController : MonoBehaviour
     // Assign a weapon to the character
     public virtual void AssignWeapon(WeaponController controller, bool destroyCurrentWeapon = true)
     {
+        // If assigning current weapon then do nothing
+        if (controller != null && controller.Equals(this.weaponController)) return;
+        // Check if need to destroy current weapon
         if (destroyCurrentWeapon) Destroy(this.weaponController?.gameObject);
         // If controller is null just unassign current weapon
         if (controller == null)

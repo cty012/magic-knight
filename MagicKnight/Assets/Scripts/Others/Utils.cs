@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 public static class Utils
@@ -43,5 +44,29 @@ public static class Utils
     public static bool IsTerrain(GameObject obj)
     {
         return "Terrain".Equals(obj?.transform?.parent?.gameObject?.name);
+    }
+    // File system
+    public static bool CreateFolderIfNotExist(string path)
+    {
+        path = Path.GetFullPath(path);
+        if (Directory.Exists(path)) return false;
+        // If not exist, check if parent folder exist
+        DirectoryInfo parent = Directory.GetParent(path);
+        if (!parent.Exists) Utils.CreateFolderIfNotExist(parent.FullName);
+        Directory.CreateDirectory(path);
+        return true;
+    }
+    public static bool CreateFileIfNotExist(string path, string contents = "")
+    {
+        path = Path.GetFullPath(path);
+        if (File.Exists(path)) return false;
+        // If not exist, check if parent folder exist
+        DirectoryInfo parent = Directory.GetParent(path);
+        if (!parent.Exists) Utils.CreateFolderIfNotExist(parent.FullName);
+        using (StreamWriter sw = File.CreateText(path))
+        {
+            sw.Write(contents);
+        }
+        return true;
     }
 }
