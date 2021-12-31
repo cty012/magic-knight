@@ -7,12 +7,9 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance { get; private set; }
 
-    private GameManager()
-    {
-        GameManager.instance = this;
-    }
+    private GameManager() { GameManager.instance = this; }
 
-    public void LoadScene(string scene, bool isGameScene)
+    public void LoadScene(string scene, bool isGameScene = false)
     {
         // Callbacks
         if (isGameScene)
@@ -28,10 +25,21 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadSceneAsync(scene);
     }
 
+    // Load the scene saved in DataManager.instance.save
+    public void LoadSave()
+    {
+        this.LoadScene(DataManager.instance.save["scene"].Get<string>("name"), true);
+    }
+
     public void SetupGameScene(Scene scene, LoadSceneMode mode)
     {
+        GameObject map = GameObject.Find("Map");
+        GameObject player = map.transform.Find("Player").gameObject;
+        // Set player position
+        int checkpoint = DataManager.instance.save["scene"].Get<int>("checkpoint");
+        player.transform.position = map.transform.Find("Checkpoint").Find(checkpoint.ToString()).position;
         // Assign new weapon by reading from the DataManager
-        PlayerController playerController = GameObject.Find("Player").GetComponent<PlayerController>();
+        PlayerController playerController = player.GetComponent<PlayerController>();
         if (DataManager.instance.save["player"].Get<string>("weapon", out string weaponName))
         {
             GameObject weapon = Resources.Load<GameObject>("Prefabs/Weapons/" + weaponName);
@@ -55,7 +63,7 @@ public class GameManager : MonoBehaviour
     // TEMPERARY
     private void DetectChangeScene()
     {
-        if (Input.GetKeyDown(KeyCode.BackQuote)) this.LoadScene("StartMenu", false);
+        if (Input.GetKeyDown(KeyCode.BackQuote)) this.LoadScene("Menu", false);
         else if (Input.GetKeyDown(KeyCode.Alpha1)) this.LoadScene("Map1", true);
         else if (Input.GetKeyDown(KeyCode.Alpha2)) this.LoadScene("Map2", true);
     }

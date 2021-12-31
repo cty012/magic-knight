@@ -16,6 +16,9 @@ using UnityEngine;
  * 
  * General structure:
  * DataManager
+ *   - globalSave: saved info applies for all saved files (e.g. which slot was played last time)
+ *     - slot: the slot number currently playing
+ *     - ...
  *   - save: this data group is for loading and saving game data on the disk.
  *     [WARNING] Although not compulsory, this section only allows data of type:
  *        int/float/bool/string
@@ -35,7 +38,7 @@ using UnityEngine;
  *       - checkpoint: the id number of the checkpoint that the player saved at
  *       - ...
  *     - ...
- *   - backup-saves: a list of backup-saves for storing extra savedfiles.
+ *   - backupSaves: a list of backup-saves for storing extra savedfiles.
  *     - 0: same structure as DataManager.save. Can store another version of savedfiles.
  *     - 1
  *     - ...
@@ -46,23 +49,44 @@ public class DataManager : MonoBehaviour
 {
     public static DataManager instance { get; private set; }
 
+    public readonly DataGroup globalSave = new DataGroup();
     public readonly DataGroup save = new DataGroup();
     public readonly List<DataGroup> backupSaves = new List<DataGroup>();
     public readonly DataGroup temp = new DataGroup();
 
     // Save paths
-    public string savePath { get { return Path.Combine(Settings.instance.Get<string>("data-path"), "save"); } }
+    public string savePath { get { return Path.Combine(Settings.instance.localStoragePath, "save"); } }
     public string GetSlotPath(int slotNumber)
     {
-        return Path.Combine(this.savePath, string.Format("slot{0}.mk", slotNumber.ToString()));
+        return Path.Combine(this.savePath, string.Format("slot{0}.json", slotNumber.ToString()));
     }
 
     private DataManager() { DataManager.instance = this; }
 
+    // Load the global save
+    public void LoadGlobalSave()
+    {
+        Utils.CreateFileIfNotExist(Path.Combine(this.savePath, "global.json"), "{}");
+        this.globalSave.LoadFromDisk(Path.Combine(this.savePath, "global.json"));
+    }
+
+    public bool SlotExists(int slotNumber)
+    {
+        return File.Exists(this.GetSlotPath(slotNumber));
+    }
+
     // Load from a save slot to the save DataGroup
     public void LoadFromDisk(int slotNumber)
     {
-        this.save.LoadFromDisk(this.GetSlotPath(slotNumber));
+        if (!Utils.CreateFileIfNotExist(this.GetSlotPath(slotNumber)))
+        {
+            this.save.LoadFromDisk(this.GetSlotPath(slotNumber));
+        }
+        else
+        {
+            this.save.CreateBasicSave();
+            this.save.SaveToDisk(this.GetSlotPath(slotNumber));
+        }
     }
 
     public void SaveToDisk(int slotNumber)
@@ -83,7 +107,6 @@ public class DataManager : MonoBehaviour
     }
 }
 
-[System.Serializable]
 public class DataGroup
 {
     private Dictionary<string, DataGroup> dataGroups;
@@ -121,7 +144,7 @@ public class DataGroup
     public bool Get<T>(string dataName, out T data)
     {
         bool result = this.datas.TryGetValue(dataName, out object originalData);
-        data = (T)originalData;
+        data = originalData is T ? (T)originalData : default(T);
         return result;
     }
 
@@ -295,7 +318,7 @@ public class DataGroup
         }
         else
         {
-            JsonDataNode<string> typeNode = new JsonDataNode<string>("\"" + GetType(value) + "\"}");
+            JsonDataNode<string> typeNode = new JsonDataNode<string>(string.Format("\"{0}\"", GetType(value)));
             dataNode.values.Add(typeNode);
             // Add the value
             dataNode.values.Add(Json.JsonNodeFactory.GetJsonNode(string.Format((value is string) ? "\"{0}\"" : "{0}", value.ToString())));

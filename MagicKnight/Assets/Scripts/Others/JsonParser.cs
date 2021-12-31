@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Assertions;
 using Json;
 
 // Parses json into a tree structure
@@ -39,6 +40,8 @@ public class JsonArrayNode : JsonNode
         List<string> jsonArray = jsonString.RemoveFirstAndLast().SafeSplit(',');
         foreach (string node in jsonArray)
         {
+            // Skip empty node
+            if (node.CleanTrim().Length == 0) continue;
             values.Add(JsonNodeFactory.GetJsonNode(node));
         }
     }
@@ -51,6 +54,7 @@ public class JsonArrayNode : JsonNode
     // More organized string, easier to look
     public override string GetDecoratedJsonString()
     {
+        if (this.values.Count == 0) return "[]";
         return "[\n    " + string.Join(",\n", this.values.Select(it => it.GetDecoratedJsonString())).Replace("\n", "\n    ") + "\n]";
     }
 }
@@ -71,8 +75,10 @@ public class JsonObjectNode : JsonNode
         List<string> jsonArray = jsonString.RemoveFirstAndLast().SafeSplit(',');
         foreach (string node in jsonArray)
         {
+            // Skip empty node
+            if (node.CleanTrim().Length == 0) continue;
             List<string> pair = node.SafeSplit(':');
-            if (pair.Count != 2) continue;
+            Assert.AreEqual(pair.Count, 2);
             if (!typeof(string).Equals(JsonNodeFactory.GetDataType(pair[0]))) continue;
             values[pair[0].CleanTrim().RemoveFirstAndLast()] = JsonNodeFactory.GetJsonNode(pair[1]);
         }
@@ -85,6 +91,7 @@ public class JsonObjectNode : JsonNode
 
     public override string GetDecoratedJsonString()
     {
+        if (this.values.Count == 0) return "{}";
         return "{\n    " + string.Join(",\n", this.values.Select(it => string.Format("\"{0}\": {1}", it.Key, it.Value.GetDecoratedJsonString()))).Replace("\n", "\n    ") + "\n}";
     }
 }
@@ -225,12 +232,12 @@ namespace Json
                     // Inspect the value of the character
                     // Only \ and " are valid
                     if ('\\'.Equals(original[i])) isEscaped = true;
-                    if ('"'.Equals(original[i])) inQuotes = !inQuotes;
-                    continue;
+                    if ('"'.Equals(original[i])) inQuotes = false;
                 }
                 // Now it must be a valid character
                 // Inspect the value of the character
-                if ('{'.Equals(original[i])) layerBraces++;
+                else if ('"'.Equals(original[i])) inQuotes = true;
+                else if ('{'.Equals(original[i])) layerBraces++;
                 else if ('}'.Equals(original[i])) layerBraces--;
                 else if ('['.Equals(original[i])) layerBrackets++;
                 else if (']'.Equals(original[i])) layerBrackets--;
@@ -252,6 +259,15 @@ namespace Json
             result.Add(original.Substring(start));
 
             return result;
+        }
+
+        public static void Test()
+        {
+            foreach (string part in "\"asdf\": [\"aaa\", \"bbb\", 123], \"wasd\": 987, \"tc37\": {\"name\": \"daniel\", \"age\": 22}".SafeSplit(',')) UnityEngine.Debug.Log(part);
+            foreach (string part in "\"aaa\", \"bbb\", 123".SafeSplit(',')) UnityEngine.Debug.Log(part);
+            foreach (string part in "\"aaa\"".SafeSplit(',')) UnityEngine.Debug.Log(part);
+            foreach (string part in "\"asdf\": [\"aaa\", \"bbb\", 123]".SafeSplit(':')) UnityEngine.Debug.Log(part);
+            foreach (string part in "\"local-storage\": \"%HOMEDRIVE%/%HOMEPATH%/.MagicKnight\"".SafeSplit(':')) UnityEngine.Debug.Log(part);
         }
     }
 }

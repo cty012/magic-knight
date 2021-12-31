@@ -1,16 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 public class Manager : MonoBehaviour
 {
-    void Awake()
+    public static Manager instance { get; private set; }
+
+    private Manager() { Manager.instance = this; }
+
+    private void Awake()
     {
         // Self
         Object.DontDestroyOnLoad(this.gameObject);
         // Settings
         Settings.instance.LoadSettings();
-        // DataManager TODO testing
-        DataManager.instance.save.CreateBasicSave();
+        // DataManager
+        DataManager.instance.LoadGlobalSave();
     }
 }

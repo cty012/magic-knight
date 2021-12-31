@@ -7,11 +7,11 @@ public class Settings
 {
     public static readonly Settings instance = new Settings();
     public static readonly string defaultSettingsPath = "Assets/Setup/Settings.json";
-    public string userDataPath { get; private set; }
+    public string localStoragePath { get; private set; }
     public string userSettingsPath {
         get
         {
-            return this.userDataPath == null ? null : Path.Combine(this.userDataPath, "settings.json");
+            return this.localStoragePath == null ? null : Path.Combine(this.localStoragePath, "settings.json");
         }
     }
 
@@ -23,11 +23,11 @@ public class Settings
     public void LoadSettings()
     {
         this.defaultSettings = (JsonObjectNode)JsonParser.Parse(File.ReadAllText(Settings.defaultSettingsPath));
-        if (this.Get<string>("data-path", out string userDataPath))
+        if (this.Get<string>("local-storage", out string userDataPath))
         {
-            this.userDataPath = Path.GetFullPath(System.Environment.ExpandEnvironmentVariables(userDataPath));
+            this.localStoragePath = Path.GetFullPath(System.Environment.ExpandEnvironmentVariables(userDataPath));
             Utils.CreateFolderIfNotExist(DataManager.instance.savePath);
-            Utils.CreateFileIfNotExist(this.userSettingsPath, "{\n}");
+            Utils.CreateFileIfNotExist(this.userSettingsPath, "{}");
             this.userSettings = (JsonObjectNode)JsonParser.Parse(File.ReadAllText(this.userSettingsPath));
         }
         else
