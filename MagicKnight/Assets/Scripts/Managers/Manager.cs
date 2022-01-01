@@ -9,7 +9,7 @@ public class Manager : MonoBehaviour
 
     private Manager() { Manager.instance = this; }
 
-    private void Awake()
+    private void Start()
     {
         // Self
         Object.DontDestroyOnLoad(this.gameObject);
@@ -17,5 +17,7 @@ public class Manager : MonoBehaviour
         Settings.instance.LoadSettings();
         // DataManager
         DataManager.instance.LoadGlobalSave();
+        // Menumanager
+        MenuManager.instance.SwitchMenu(Menu.MAIN_MENU);
     }
 }

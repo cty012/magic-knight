@@ -7,8 +7,6 @@ public class MenuManager : MonoBehaviour
 {
     public static MenuManager instance { get; private set; }
 
-    public GameObject canvas { get; private set; }
-
     // Menu prefabs
     public Menu currentMenu { get; private set; }
     public GameObject currentMenuObject { get; private set; }
@@ -19,7 +17,6 @@ public class MenuManager : MonoBehaviour
     private void Awake()
     {
         // Load resources
-        this.canvas = GameObject.Find("Canvas");
         this.menus = new Dictionary<Menu, GameObject>();
         this.menus[Menu.MAIN_MENU] = Resources.Load<GameObject>("Prefabs/UI/MainMenu");
         this.menus[Menu.NEW_GAME_MENU] = Resources.Load<GameObject>("Prefabs/UI/LoadMenu");
@@ -28,16 +25,39 @@ public class MenuManager : MonoBehaviour
 
     private void Start()
     {
-        // Load the main menu
-        this.SwitchMenu(Menu.MAIN_MENU);
+        // Listen to scene change
+        EventManager.instance.On("load-scene", (BaseEvent eventArgs) => { this.OnSceneLoaded((LoadSceneEvent)eventArgs); });
+    }
+
+    private void OnSceneLoaded(LoadSceneEvent eventArgs)
+    {
+        switch (eventArgs.type)
+        {
+            case LoadSceneEventType.LOAD_SCENE:
+                this.ClearCanvas();
+                if ("Menu".Equals(((LoadSceneEvent)eventArgs).scene.name)) this.SwitchMenu(Menu.MAIN_MENU);
+                break;
+            case LoadSceneEventType.LOAD_GAME_SCENE:
+                this.ResetValues();
+                break;
+        }
+    }
+
+    public void ResetValues()
+    {
+        this.currentMenu = Menu.NULL;
+        this.currentMenuObject = null;
     }
 
     // Close the sub-menu and clear everything else
     public void ClearCanvas()
     {
-        this.currentMenu = Menu.NULL;
-        this.currentMenuObject = null;
-        foreach (Transform transform in this.canvas.transform)
+        // Reset values
+        this.ResetValues();
+        // Clear the canvas
+        GameObject canvas = GameObject.Find("Canvas");
+        if (canvas == null) return;
+        foreach (Transform transform in canvas.transform)
         {
             Destroy(transform.gameObject);
         }
@@ -46,10 +66,14 @@ public class MenuManager : MonoBehaviour
     // Switch to another sub-menu
     public void SwitchMenu(Menu menu)
     {
+        // Make sure the operation is valid
         if (!this.menus.ContainsKey(menu)) return;
+        GameObject canvas = GameObject.Find("Canvas");
+        if (canvas == null) return;
+        // Switch menu
         this.ClearCanvas();
         this.currentMenu = menu;
-        this.currentMenuObject = Object.Instantiate(this.menus[menu], this.canvas.transform);
+        this.currentMenuObject = Object.Instantiate(this.menus[menu], canvas.transform);
     }
 
     public void ButtonsOnClick(string tag, Button button)
@@ -90,9 +114,9 @@ public class MenuManager : MonoBehaviour
                     this.SwitchMenu(Menu.MAIN_MENU);
                 }
                 // Check if slot number is valid
-                else if (int.TryParse(tag, out int slotNumber))
+                else if ("slot".Equals(tag))
                 {
-                    DataManager.instance.LoadFromDisk(slotNumber);
+                    DataManager.instance.LoadFromDisk(button.GetComponent<SlotButtonController>().slotNumber);
                     GameManager.instance.LoadSave();
                 }
                 break;
@@ -103,10 +127,15 @@ public class MenuManager : MonoBehaviour
                     this.SwitchMenu(Menu.MAIN_MENU);
                 }
                 // Check if slot number is valid
-                else if (int.TryParse(tag, out int slotNumber) && DataManager.instance.SlotExists(slotNumber))
+                else if ("slot".Equals(tag))
                 {
-                    DataManager.instance.LoadFromDisk(slotNumber);
-                    GameManager.instance.LoadSave();
+                    int slotNumber = button.GetComponent<SlotButtonController>().slotNumber;
+                    if (DataManager.instance.SlotExists(slotNumber))
+                    {
+                        DataManager.instance.LoadFromDisk(slotNumber);
+                        GameManager.instance.LoadSave();
+                    }
+                    
                 }
                 break;
         }

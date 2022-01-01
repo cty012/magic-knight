@@ -37,24 +37,29 @@ public class SlimeController : EnemyController
 
     protected virtual void OnCollisionEnter2D(Collision2D collision)
     {
-        Collider2D otherCollider = collision.collider;
-
         // Check if the target is a Movable
-        MovableController controller = otherCollider.gameObject.GetComponent<MovableController>();
+        MovableController controller = collision.collider.gameObject.GetComponent<MovableController>();
         if (controller == null) return;
-
-        // Attack the hostile target if can inflict damage
-        if (this.damageCD.stopped && this.IsHostile(otherCollider.gameObject))
-        {
-            controller.OnAttacked(AttackType.PHYSICAl_ATTACK, this.attackPower);
-        }
 
         // Push the hostile target if is currently sprinting
         int direction = (int)Utils.GetDirection(this.transform.position.DropZ(), controller.transform.position.DropZ()).x;
         if (!this.sprintTime.stopped) controller.OnPushed(PushType.NORMAL_PUSH, this.pushPower * direction);
-        
-        // Avoid inflicting furthur damage to Player
-        this.damageCD.Reset();
+    }
+
+    protected virtual void OnCollisionStay2D(Collision2D collision)
+    {
+        // Check if the target is a Movable
+        MovableController controller = collision.collider.gameObject.GetComponent<MovableController>();
+        if (controller == null) return;
+
+        // Attack the hostile target if can inflict damage
+        if (this.damageCD.stopped && this.IsHostile(collision.collider.gameObject))
+        {
+            controller.OnAttacked(AttackType.PHYSICAl_ATTACK, this.attackPower);
+
+            // Avoid inflicting furthur damage to Player
+            this.damageCD.Reset();
+        }
     }
 
     protected override void UpdateTimers()

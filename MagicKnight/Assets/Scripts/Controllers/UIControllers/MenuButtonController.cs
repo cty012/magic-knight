@@ -8,7 +8,7 @@ public class MenuButtonController : MonoBehaviour
     private Button button;
     public string buttonTag;
 
-    private void Awake()
+    protected virtual void Awake()
     {
         this.button = this.GetComponent<Button>();
         if (this.button != null)

@@ -42,23 +42,23 @@ public abstract class MovableController : MonoBehaviour
     protected bool onGround;
 
     // HP (NEED TO CUSTOMIZE ALL FIElDS IN THIS SECTION)
-    private int _hp;
+    protected int _hp;
     public virtual int hp
     {
         get { return this._hp; }
         set
         {
-            this._hp = value.Clamp(0, maxHp);
+            this._hp = value.Clamp(0, this.maxHp);
         }
     }
-    private int _maxHp;
-    public int maxHp
+    protected int _maxHp;
+    public virtual int maxHp
     {
         get { return this._maxHp; }
         set
         {
             this._maxHp = Math.Max(value, 0);
-            this.hp = Math.Min(this.hp, this._maxHp);
+            this.hp = this.hp;
         }
     }
 
@@ -91,8 +91,8 @@ public abstract class MovableController : MonoBehaviour
 
         this.onGround = false;
 
-        this.hp = this.maximumHp;
         this.maxHp = this.maximumHp;
+        this.hp = this.maximumHp;
 
         this.knockback = new Timer(0, this.knockbackDecay);
     }

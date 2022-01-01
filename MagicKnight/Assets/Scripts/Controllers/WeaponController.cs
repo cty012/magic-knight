@@ -64,22 +64,36 @@ public abstract class WeaponController : MonoBehaviour
         this.transform.parent?.gameObject?.GetComponent<MovableController>()?.AssignWeapon(this);
     }
 
-    // Callback of collision
-    protected virtual void OnTriggerStay2D(Collider2D otherCollider)
+    // Callback of collision start
+    protected virtual void OnTriggerEnter2D(Collider2D otherCollider)
     {
         if (this.isAttacking && this.userController != null && this.userController.IsHostile(otherCollider.gameObject) && !this.attackedObjects.Contains(otherCollider.gameObject))
         {
-            // Attack and push the hostile target
             MovableController controller = otherCollider.gameObject.GetComponent<MovableController>();
             if (controller == null) return;
-            // Attack and push the hostile target
-            controller.OnAttacked(AttackType.PHYSICAl_ATTACK, this.attackPower);
+
+            // Push the hostile target
             int direction = (int)Utils.GetDirection(
                 this.userController.transform.position.DropZ(),
                 controller.transform.position.DropZ()).x;
             controller.OnPushed(PushType.NORMAL_PUSH, this.pushPower * direction);
+        }
+    }
+
+    // Callback of collision update
+    protected virtual void OnTriggerStay2D(Collider2D otherCollider)
+    {
+        if (this.isAttacking && this.userController != null && this.userController.IsHostile(otherCollider.gameObject) && !this.attackedObjects.Contains(otherCollider.gameObject))
+        {
+            MovableController controller = otherCollider.gameObject.GetComponent<MovableController>();
+            if (controller == null) return;
+
+            // Attack the hostile target
+            controller.OnAttacked(AttackType.PHYSICAl_ATTACK, this.attackPower);
+            
             // Freeze the hostile target if it is an Enemy
             if (controller is EnemyController enemyController) enemyController.Freeze(this.freezePower);
+
             // Add the hostile target to the list to avoid inflicting further damage
             this.attackedObjects.Add(otherCollider.gameObject);
         }

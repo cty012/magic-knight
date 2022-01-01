@@ -46,7 +46,7 @@ public class PlayerController : MovableController
         {
             base.hp = value;
             EventManager.instance.Emit("hp-change", new PlayerStatusChangeEvent(
-                PlayerStatusChangeEventType.HP_CHANGE, base.hp));
+                PlayerStatusChangeEventType.HP_CHANGE, base.hp, base.maxHp));
         }
     }
 
@@ -72,7 +72,7 @@ public class PlayerController : MovableController
         this.jump = false;
         this.drop = true;
 
-        this.moveStep = 250;
+        this.moveStep = 300;
 
         this.jumpNum = new DiscreteTimer(1);
         this.jumpStep = 1000;
