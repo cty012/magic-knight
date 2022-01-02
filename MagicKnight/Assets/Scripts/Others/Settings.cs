@@ -23,17 +23,26 @@ public class Settings
     public void LoadSettings()
     {
         this.defaultSettings = (JsonObjectNode)JsonParser.Parse(File.ReadAllText(Settings.defaultSettingsPath));
-        if (this.Get<string>("local-storage", out string userDataPath))
+
+        // Get local storage path
+        string localStoragePath = null;
+        switch (Application.platform)
         {
-            this.localStoragePath = Path.GetFullPath(System.Environment.ExpandEnvironmentVariables(userDataPath));
-            Utils.CreateFolderIfNotExist(DataManager.instance.savePath);
-            Utils.CreateFileIfNotExist(this.userSettingsPath, "{}");
-            this.userSettings = (JsonObjectNode)JsonParser.Parse(File.ReadAllText(this.userSettingsPath));
+            case RuntimePlatform.WindowsPlayer:
+            case RuntimePlatform.WindowsEditor:
+                localStoragePath = this.Get<string>("windows-local-storage");
+                break;
+            case RuntimePlatform.OSXPlayer:
+            case RuntimePlatform.OSXEditor:
+                localStoragePath = this.Get<string>("local-storage");
+                break;
         }
-        else
-        {
-            this.userSettings = new JsonObjectNode();
-        }
+        this.localStoragePath = Path.GetFullPath(System.Environment.ExpandEnvironmentVariables(localStoragePath));
+
+        // Create/read user settings
+        Utils.CreateFolderIfNotExist(DataManager.instance.savePath);
+        Utils.CreateFileIfNotExist(this.userSettingsPath, "{}");
+        this.userSettings = (JsonObjectNode)JsonParser.Parse(File.ReadAllText(this.userSettingsPath));
     }
 
     public T Get<T>(string key)

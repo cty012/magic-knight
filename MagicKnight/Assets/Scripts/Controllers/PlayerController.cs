@@ -42,6 +42,16 @@ public class PlayerController : MovableController
         }
     }
 
+    public override int maxHp
+    {
+        get { return base.maxHp; }
+        set
+        {
+            base.maxHp = value;
+            DataManager.instance.save["player"].Set("hp", value);
+        }
+    }
+
     public Inventory inventory { get; private set; }
 
     // Reset is called when the script is attached to a game object
@@ -71,6 +81,9 @@ public class PlayerController : MovableController
 
         this.canAttack = true;
         this.attackCD = new Timer(0.5f);
+
+        this.maxHp = DataManager.instance.save["player"].Get<int>("hp");
+        this.hp = this.maxHp;
 
         this.inventory = new Inventory();
     }

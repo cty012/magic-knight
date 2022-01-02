@@ -42,8 +42,7 @@ public class SlimeController : EnemyController
         if (controller == null) return;
 
         // Push the hostile target if is currently sprinting
-        int direction = (int)Utils.GetDirection(this.transform.position.DropZ(), controller.transform.position.DropZ()).x;
-        if (!this.sprintTime.stopped) controller.OnPushed(PushType.NORMAL_PUSH, this.pushPower * direction);
+        if (!this.sprintTime.stopped) controller.OnPushed(PushType.NORMAL_PUSH, this.pushPower * (this.sprintRight ? 1 : -1));
     }
 
     protected virtual void OnCollisionStay2D(Collision2D collision)

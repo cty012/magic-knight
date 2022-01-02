@@ -7,7 +7,12 @@ public class Manager : MonoBehaviour
 {
     public static Manager instance { get; private set; }
 
-    private Manager() { Manager.instance = this; }
+    private Manager() { if (Manager.instance == null) Manager.instance = this; }
+
+    private void Awake()
+    {
+        if (Manager.instance != this) Object.Destroy(this);
+    }
 
     private void Start()
     {

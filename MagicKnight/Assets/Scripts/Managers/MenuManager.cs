@@ -12,7 +12,7 @@ public class MenuManager : MonoBehaviour
     public GameObject currentMenuObject { get; private set; }
     private Dictionary<Menu, GameObject> menus;
 
-    private MenuManager() { MenuManager.instance = this; }
+    private MenuManager() { if (MenuManager.instance == null) MenuManager.instance = this; }
 
     private void Awake()
     {

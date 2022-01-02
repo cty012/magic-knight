@@ -10,7 +10,7 @@ public class GameManager : MonoBehaviour
     public bool isGameScene { get; private set; }
     public bool paused { get; set; }
 
-    private GameManager() { GameManager.instance = this; }
+    private GameManager() { if (GameManager.instance == null) GameManager.instance = this; }
 
     private void Awake()
     {

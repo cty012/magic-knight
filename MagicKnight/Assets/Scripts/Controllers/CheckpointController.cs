@@ -13,6 +13,6 @@ public class CheckpointController : MonoBehaviour
     // Check if a point is inside the checkpoint save zone
     public bool InRange(GameObject target)
     {
-        return ((RectTransform)this.transform).rect.Contains(target.transform.position.DropZ());
+        return ((RectTransform)this.transform).GetWorldRect().Contains(target.transform.position.DropZ());
     }
 }

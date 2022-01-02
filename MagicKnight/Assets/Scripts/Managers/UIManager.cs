@@ -14,7 +14,7 @@ public class UIManager : MonoBehaviour
     public GameObject uiPlayerStatus { get; private set; }
     public GameObject uiInventory { get; private set; }
 
-    private UIManager() { UIManager.instance = this; }
+    private UIManager() { if (UIManager.instance == null) UIManager.instance = this; }
 
     private void Awake()
     {

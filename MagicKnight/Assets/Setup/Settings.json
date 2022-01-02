@@ -1,3 +1,4 @@
 {
-    "local-storage": "%HOMEDRIVE%/%HOMEPATH%/.MagicKnight"
+    "windows-local-storage": "%USERPROFILE%/.MagicKnight",
+    "macos-local-storage": "$HOME/.MagicKnight"
 }

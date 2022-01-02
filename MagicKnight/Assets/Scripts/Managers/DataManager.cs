@@ -62,7 +62,7 @@ public class DataManager : MonoBehaviour
         return Path.Combine(this.savePath, string.Format("slot{0}.json", slotNumber.ToString()));
     }
 
-    private DataManager() { DataManager.instance = this; }
+    private DataManager() { if (DataManager.instance == null) DataManager.instance = this; }
 
     // Load the global save
     public void LoadGlobalSave()
@@ -86,6 +86,15 @@ public class DataManager : MonoBehaviour
         else
         {
             this.save.CreateBasicSave();
+            this.save.SaveToDisk(this.GetSlotPath(slotNumber));
+        }
+        this.temp["current-game", true].Set("slot", slotNumber);
+    }
+
+    public void SaveToDisk()
+    {
+        if (this.temp["current-game", true].Get("slot", out int slotNumber))
+        {
             this.save.SaveToDisk(this.GetSlotPath(slotNumber));
         }
     }

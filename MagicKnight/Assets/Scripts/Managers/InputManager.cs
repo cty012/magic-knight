@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class InputManager : MonoBehaviour
 {
+    // Singleton
+    public static InputManager instance { get; private set; }
+
     // Player control
     public KeyCode keyUp;
     public KeyCode keyDown;
@@ -14,6 +17,11 @@ public class InputManager : MonoBehaviour
 
     // UI control
     public KeyCode keyPause;
+
+    // Other control
+    public KeyCode keySave;
+
+    private InputManager() { if (InputManager.instance == null) InputManager.instance = this; }
 
     // Detect input to control UI
     private void ControlUI()
@@ -53,6 +61,23 @@ public class InputManager : MonoBehaviour
         }
     }
 
+    private void ControlOther()
+    {
+        if (Input.GetKeyDown(keySave))
+        {
+            // Iterate checkpoints
+            foreach (Transform checkpoint in GameObject.Find("Checkpoint").transform)
+            {
+                if (checkpoint.GetComponent<CheckpointController>().InRange())
+                {
+                    DataManager.instance.save["scene"].Set("checkpoint", int.Parse(checkpoint.name));
+                    DataManager.instance.SaveToDisk();
+                    break;
+                }
+            }
+        }
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -60,6 +85,7 @@ public class InputManager : MonoBehaviour
         if (!GameManager.instance.paused)
         {
             this.ControlPlayer();
+            this.ControlOther();
         }
     }
 }

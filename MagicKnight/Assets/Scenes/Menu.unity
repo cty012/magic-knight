@@ -555,6 +555,7 @@ MonoBehaviour:
   keySprint: 304
   keyAttack: 106
   keyPause: 27
+  keySave: 101
 --- !u!1 &1600174417
 GameObject:
   m_ObjectHideFlags: 0

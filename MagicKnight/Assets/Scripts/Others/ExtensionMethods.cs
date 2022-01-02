@@ -42,6 +42,10 @@ public static class ExtensionMethods
     {
         return new Vector2(vector.x * scale, vector.y * scale);
     }
+    public static Vector2 MultiplyVector(this Vector2 vector, Vector2 other)
+    {
+        return new Vector2(vector.x * other.x, vector.y * other.y);
+    }
     public static Vector2 Negative(this Vector2 vector)
     {
         return vector.MultiplyScalar(-1);
@@ -83,5 +87,10 @@ public static class ExtensionMethods
     public static Vector2 GetLocalPointAtCenter(this RectTransform transform)
     {
         return transform.GetLocalPointByAnchor(new Vector2(0.5f, 0.5f));
+    }
+    // Get the world rect
+    public static Rect GetWorldRect(this RectTransform transform)
+    {
+        return new Rect(transform.GetLocalPointAtBottomLeft(), transform.sizeDelta.MultiplyVector(transform.lossyScale));
     }
 }
