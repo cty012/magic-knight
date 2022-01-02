@@ -17,6 +17,7 @@ public class Manager : MonoBehaviour
         Settings.instance.LoadSettings();
         // DataManager
         DataManager.instance.LoadGlobalSave();
+        DataManager.instance.temp["items", true].LoadFromDisk("Assets/Setup/Items.json");
         // Menumanager
         MenuManager.instance.SwitchMenu(Menu.MAIN_MENU);
     }

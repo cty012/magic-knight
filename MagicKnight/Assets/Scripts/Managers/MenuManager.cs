@@ -116,7 +116,8 @@ public class MenuManager : MonoBehaviour
                 // Check if slot number is valid
                 else if ("slot".Equals(tag))
                 {
-                    DataManager.instance.LoadFromDisk(button.GetComponent<SlotButtonController>().slotNumber);
+                    DataManager.instance.save.CreateBasicSave();
+                    DataManager.instance.SaveToDisk(button.GetComponent<SlotButtonController>().slotNumber);
                     GameManager.instance.LoadSave();
                 }
                 break;
@@ -135,7 +136,6 @@ public class MenuManager : MonoBehaviour
                         DataManager.instance.LoadFromDisk(slotNumber);
                         GameManager.instance.LoadSave();
                     }
-                    
                 }
                 break;
         }

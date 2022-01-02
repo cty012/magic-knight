@@ -25,7 +25,7 @@ public abstract class MovableController : MonoBehaviour
     public bool facingRight
     {
         get { return this._facingRight; }
-        protected set
+        set
         {
             this._facingRight = value;
             this.spriteRenderer.flipX = !value;

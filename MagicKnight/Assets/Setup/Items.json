@@ -1,0 +1,8 @@
+{
+    "data": [
+        ["string"],
+        "consumable;name1;imgpath1;description1",
+        "consumable;name2;imgpath2;description2",
+        "non-consumable;name3;imgpath3;description3"
+    ]
+}

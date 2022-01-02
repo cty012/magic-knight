@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 // TODO: inventory
 public class UIManager : MonoBehaviour
@@ -10,16 +11,16 @@ public class UIManager : MonoBehaviour
     private GameObject uiPlayerStatusPrefab;
     private GameObject uiInventoryPrefab;
 
-    private GameObject uiPlayerStatus;
-    private GameObject uiInventory;
+    public GameObject uiPlayerStatus { get; private set; }
+    public GameObject uiInventory { get; private set; }
 
     private UIManager() { UIManager.instance = this; }
 
     private void Awake()
     {
         this.uiPlayerStatusPrefab = Resources.Load<GameObject>("Prefabs/UI/PlayerStatus");
-        // this.uiInventoryPrefab = Resources.Load<GameObject>("Prefabs/UI/Inventory");
-        // this.uiInventoryPrefab.SetActive(false);
+        this.uiInventoryPrefab = Resources.Load<GameObject>("Prefabs/UI/Inventory");
+        this.uiInventoryPrefab.SetActive(false);
     }
 
     private void Start()
@@ -40,11 +41,12 @@ public class UIManager : MonoBehaviour
             case LoadSceneEventType.LOAD_GAME_SCENE:
                 GameObject canvas = GameObject.Find("Canvas");
                 this.uiPlayerStatus = Object.Instantiate(this.uiPlayerStatusPrefab, canvas.transform);
-                // this.uiInventory = Object.Instantiate(this.uiInventoryPrefab, canvas.transform);
+                this.uiInventory = Object.Instantiate(this.uiInventoryPrefab, canvas.transform);
                 break;
         }
     }
 
+    // Update player status when it changes
     private void OnPlayerStatusChange(PlayerStatusChangeEvent eventArgs)
     {
         if (this.uiPlayerStatus == null) return;
@@ -60,6 +62,24 @@ public class UIManager : MonoBehaviour
                 mpBar.SetMaxValue(eventArgs.maxValue);
                 mpBar.SetValue(eventArgs.value);
                 break;
+        }
+    }
+
+    public void ButtonsOnClick(string tag, Button button)
+    {
+        if (tag.Length == 0) return;
+
+        if ("toggle-pause".Equals(tag))
+        {
+            GameManager.instance.TogglePause();
+        }
+        else if ("menu".Equals(tag))
+        {
+            GameManager.instance.LoadScene("Menu");
+        }
+        else
+        {
+            Application.Quit();
         }
     }
 }

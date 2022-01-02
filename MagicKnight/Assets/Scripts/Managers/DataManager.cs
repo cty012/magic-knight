@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -195,11 +196,11 @@ public class DataGroup
         return LoadFromDisk("Assets/Setup/InitSave.json");
     }
 
-    /** Note: can only add int, float, string, bool, List<int, float, string, bool>, and Dictionary<int, float, string, and bool> values
+    /** Note: can only add int/float/string/bool, List<int/float/string/bool>, and Dictionary<int/float/string/bool, int/float/string/bool> values
      * To represent a data in the json:
      * int/float/string/bool: ["int/float/string/bool", VALUE]
      * List<int/float/string/bool>: [["int/float/string/bool"], VALUE1, VALUE2, ...]
-     * Dictionary<int/float/string/bool>: [{"type": "int/float/string/bool"}, {KEY1: VALUE1}, {KEY2: VALUE2}, ...]
+     * Dictionary<int/float/string/bool>: [{"int/float/string/bool": "int/float/string/bool"}, [KEY1, VALUE1], [KEY2: VALUE2], ...]
      * For more information, see Assets/Resources/Setup/InitSave.json
      */
     public DataGroup FromJsonNode(JsonObjectNode jsonNode)
@@ -223,54 +224,47 @@ public class DataGroup
         // First is string => represent the type of the value
         if (typeNode is JsonDataNode<string> structTypeNode)
         {
+            // Find the generic type
+            Type type = this.StringToType(structTypeNode.value);
             // Set the value
-            if ("string".Equals(structTypeNode.value)) this.Set(key, ((JsonDataNode<string>)dataNode.values[1]).value);
-            else if ("int".Equals(structTypeNode.value)) this.Set(key, (int)((JsonDataNode<float>)dataNode.values[1]).value);
-            else if ("float".Equals(structTypeNode.value)) this.Set(key, ((JsonDataNode<float>)dataNode.values[1]).value);
-            else if ("bool".Equals(structTypeNode.value)) this.Set(key, ((JsonDataNode<bool>)dataNode.values[1]).value);
+            this.Set(key, Convert.ChangeType(((IJsonDataNode)dataNode.values[1]).GetValue(), type));
         }
         // First is array => the value in the array represent the List generic type
         else if (typeNode is JsonArrayNode listTypeNode)
         {
             // Find the generic type
-            string type = ((JsonDataNode<string>)listTypeNode.values[0]).value;
+            Type type = this.StringToType(((JsonDataNode<string>)listTypeNode.values[0]).value);
+
             // Retrieve the values
-            List<JsonNode> valueList = dataNode.values.GetRange(1, dataNode.values.Count);
+            List<JsonNode> valueList = dataNode.values.GetRange(1, dataNode.values.Count - 1);
+
             // Set the values
-            if ("string".Equals(type)) this.Set(key, valueList.Select(it => ((JsonDataNode<string>)it).value).ToList());
-            else if ("int".Equals(type)) this.Set(key, valueList.Select(it => (int)((JsonDataNode<float>)it).value).ToList());
-            else if ("float".Equals(type)) this.Set(key, valueList.Select(it => ((JsonDataNode<float>)it).value).ToList());
-            else if ("bool".Equals(type)) this.Set(key, valueList.Select(it => ((JsonDataNode<bool>)it).value).ToList());
+            IList target = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(type));
+            foreach (IJsonDataNode item in valueList) target.Add(Convert.ChangeType(item.GetValue(), type));
+            this.Set(key, target);
         }
         // First is object => the value correspond to the key "type" represent the Dictionary's second generic type (first is string)
         else if (typeNode is JsonObjectNode dictionaryTypeNode)
         {
-            // Find the generic type
-            string type = ((JsonDataNode<string>)dictionaryTypeNode.values["type"]).value;
+            // Find the generic types
+            string keyTemp = dictionaryTypeNode.values.Keys.First();
+            Type typeK = this.StringToType(keyTemp);
+            Type typeV = this.StringToType(((JsonDataNode<string>)dictionaryTypeNode.values[keyTemp]).value);
+
             // Retrieve the values
-            List<JsonObjectNode> valueList = dataNode.values.GetRange(1, dataNode.values.Count - 1).Select(it => (JsonObjectNode)it).ToList();
-            IDictionary dictionary = null;
-            if ("string".Equals(type))
+            List<JsonArrayNode> valueList = dataNode.values
+                .GetRange(1, dataNode.values.Count - 1)
+                .Select(it => (JsonArrayNode)it).ToList();
+
+            // Set the values
+            IDictionary target = (IDictionary)Activator.CreateInstance(typeof(Dictionary<,>).MakeGenericType(typeK, typeV));
+            foreach (JsonArrayNode pairNode in valueList)
             {
-                dictionary = new Dictionary<string, string>();
-                foreach (JsonObjectNode pairNode in valueList) dictionary[pairNode.values.Keys.ToList()[0]] = ((JsonDataNode<string>)pairNode.values.Values.ToList()[0]).value;
+                object dataKey = Convert.ChangeType(((IJsonDataNode)pairNode.values[0]).GetValue(), typeK);
+                object dataValue = Convert.ChangeType(((IJsonDataNode)pairNode.values[1]).GetValue(), typeV);
+                target[dataKey] = dataValue;
             }
-            else if ("int".Equals(type))
-            {
-                dictionary = new Dictionary<string, int>();
-                foreach (JsonObjectNode pairNode in valueList) dictionary[pairNode.values.Keys.ToList()[0]] = (int)((JsonDataNode<float>)pairNode.values.Values.ToList()[0]).value;
-            }
-            else if ("float".Equals(type))
-            {
-                dictionary = new Dictionary<string, float>();
-                foreach (JsonObjectNode pairNode in valueList) dictionary[pairNode.values.Keys.ToList()[0]] = ((JsonDataNode<float>)pairNode.values.Values.ToList()[0]).value;
-            }
-            else if ("bool".Equals(type))
-            {
-                dictionary = new Dictionary<string, bool>();
-                foreach (JsonObjectNode pairNode in valueList) dictionary[pairNode.values.Keys.ToList()[0]] = ((JsonDataNode<bool>)pairNode.values.Values.ToList()[0]).value;
-            }
-            this.datas[key] = dictionary;
+            this.Set(key, target);
         }
     }
 
@@ -291,66 +285,57 @@ public class DataGroup
         JsonArrayNode dataNode = new JsonArrayNode();
         // Find the type of the object
         // 1. List
-        if (value is IList listValue)
+        if (value is IList list)
         {
-            JsonArrayNode typeNode = new JsonArrayNode("[\"" + GetListType(listValue) + "\"]");
+            Type listGenericType = list.GetType().GetGenericTypeDefinition().GetGenericArguments()[0];
+            JsonArrayNode typeNode = new JsonArrayNode("[\"" + TypeToString(listGenericType) + "\"]");
             dataNode.values.Add(typeNode);
             // Add the values
-            foreach (object eachValue in listValue)
+            foreach (object eachValue in list)
                 dataNode.values.Add(Json.JsonNodeFactory.GetJsonNode(string.Format((eachValue is string) ? "\"{0}\"" : "{0}", eachValue.ToString())));
         }
-        else if (value is IDictionary dictValue)
+        // 2. Dictionary
+        else if (value is IDictionary dict)
         {
-            JsonObjectNode typeNode = new JsonObjectNode("{\"type\":\"" + GetDictionaryType(dictValue) + "\"}");
+            Type typeKey = dict.GetType().GetGenericArguments()[0];
+            Type typeValue = dict.GetType().GetGenericArguments()[1];
+            JsonObjectNode typeNode = new JsonObjectNode("{\"" + TypeToString(typeKey) + "\":\"" + TypeToString(typeValue) + "\"}");
             dataNode.values.Add(typeNode);
             // Add the values
-            foreach (object pair in dictValue)
+            foreach (object dictKey in dict.Keys)
             {
-                if (pair is KeyValuePair<string, int> intPair)
-                    dataNode.values.Add(Json.JsonNodeFactory.GetJsonNode(string.Format("{0}", intPair.ToString())));
-                if (pair is KeyValuePair<string, float> floatPair)
-                    dataNode.values.Add(Json.JsonNodeFactory.GetJsonNode(string.Format("{0}", floatPair.ToString())));
-                if (pair is KeyValuePair<string, bool> boolPair)
-                    dataNode.values.Add(Json.JsonNodeFactory.GetJsonNode(string.Format("{0}", boolPair.ToString())));
-                if (pair is KeyValuePair<string, string> stringPair)
-                    dataNode.values.Add(Json.JsonNodeFactory.GetJsonNode(string.Format("\"{0}\"", stringPair.ToString())));
+                dataNode.values.Add(Json.JsonNodeFactory.GetJsonNode(string.Format("[{0},{1}]",
+                    (dictKey is string) ? "\"" + dictKey + "\"" : dictKey.ToString(),
+                    (dict[dictKey] is string) ? "\"" + dict[dictKey] + "\"" : dict[dictKey].ToString())));
             }
         }
+        // 3. Value
         else
         {
-            JsonDataNode<string> typeNode = new JsonDataNode<string>(string.Format("\"{0}\"", GetType(value)));
+            Type type = value.GetType();
+            JsonDataNode<string> typeNode = new JsonDataNode<string>(string.Format("\"{0}\"", TypeToString(type)));
             dataNode.values.Add(typeNode);
             // Add the value
             dataNode.values.Add(Json.JsonNodeFactory.GetJsonNode(string.Format((value is string) ? "\"{0}\"" : "{0}", value.ToString())));
         }
         return dataNode;
+    }
 
-        // Helper local functions
-        static string GetType(object value)
-        {
-            if (value is int) return "int";
-            else if (value is float) return "float";
-            else if (value is bool) return "bool";
-            else if (value is string) return "string";
-            return null;
-        }
+    private Type StringToType(string input)
+    {
+        if ("int".Equals(input)) return typeof(int);
+        else if ("float".Equals(input)) return typeof(float);
+        else if ("bool".Equals(input)) return typeof(bool);
+        else if ("string".Equals(input)) return typeof(string);
+        else return null;
+    }
 
-        static string GetListType(IList e)
-        {
-            if (e is List<int>) return "int";
-            else if (e is List<float>) return "float";
-            else if (e is List<bool>) return "bool";
-            else if (e is List<string>) return "string";
-            return null;
-        }
-
-        static string GetDictionaryType(IDictionary e)
-        {
-            if (e is Dictionary<string, int>) return "int";
-            else if (e is Dictionary<string, float>) return "float";
-            else if (e is Dictionary<string, bool>) return "bool";
-            else if (e is Dictionary<string, string>) return "string";
-            return null;
-        }
+    private string TypeToString(Type input)
+    {
+        if (typeof(int).Equals(input)) return "int";
+        else if (typeof(float).Equals(input)) return "float";
+        else if (typeof(bool).Equals(input)) return "bool";
+        else if (typeof(string).Equals(input)) return "string";
+        else return null;
     }
 }

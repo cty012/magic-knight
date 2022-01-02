@@ -5,10 +5,16 @@
             "mp": ["int", 0],
             "xp": ["int", 0]
         },
-        "weapon": ["string", "Sword"]
+        "weapon": ["string", "Sword"],
+        "inventory": [
+            {"int": "int"},
+            [0, 1],
+            [1, 2],
+            [2, 1]
+        ]
     },
     "npc": {
-        "narrator": [{"type": "bool"}]
+        "narrator": [{"string": "bool"}]
     },
     "scene": {
         "name": ["string", "Map1"],

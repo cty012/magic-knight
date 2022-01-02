@@ -4,39 +4,31 @@ using UnityEngine;
 
 public class PlayerController : MovableController
 {
-    // Controll keys
-    private KeyCode keyUp;
-    private KeyCode keyDown;
-    private KeyCode keyLeft;
-    private KeyCode keyRight;
-    private KeyCode keySprint;
-    private KeyCode keyAttack;
-
     // Movement command (only indicate player input)
-    private bool moveLeft;
-    private bool moveRight;
-    private bool jump;
-    private bool drop;
+    public bool moveLeft { get; set; }
+    public bool moveRight { get; set; }
+    public bool jump { get; set; }
+    public bool drop { get; set; }
 
     // Move
-    private float moveStep;
+    public float moveStep { get; set; }
 
     // Jump
-    private DiscreteTimer jumpNum;
-    private float jumpStep;
-    private float maxVertStep;
+    public DiscreteTimer jumpNum { get; set; }
+    public float jumpStep { get; set; }
+    public float maxVertStep { get; set; }
 
     // sprint
-    private bool allowSprint;
-    private float sprintStep;
-    private Timer sprintTime;
-    private Timer sprintCD;
-    private bool sprintingRight;
+    public bool allowSprint { get; set; }
+    public float sprintStep { get; set; }
+    public Timer sprintTime { get; set; }
+    public Timer sprintCD { get; set; }
+    public bool sprintingRight { get; set; }
 
     // attack
     public bool canAttack { get; set; }
 
-    private Timer attackCD;
+    public Timer attackCD { get; set; }
 
     // Emit event when changing HP
     public override int hp
@@ -50,7 +42,7 @@ public class PlayerController : MovableController
         }
     }
 
-    // inventory TODO
+    public Inventory inventory { get; private set; }
 
     // Reset is called when the script is attached to a game object
     protected override void Awake()
@@ -59,13 +51,6 @@ public class PlayerController : MovableController
         
         // Fields defined in PlayerController
         this.weaponAnchor = new Vector2(0.9f, 0.55f);
-
-        this.keyUp = KeyCode.W;
-        this.keyDown = KeyCode.S;
-        this.keyLeft = KeyCode.A;
-        this.keyRight = KeyCode.D;
-        this.keySprint = KeyCode.LeftShift;
-        this.keyAttack = KeyCode.J;
 
         this.moveLeft = false;
         this.moveRight = false;
@@ -86,38 +71,13 @@ public class PlayerController : MovableController
 
         this.canAttack = true;
         this.attackCD = new Timer(0.5f);
+
+        this.inventory = new Inventory();
     }
 
     public override bool IsHostile(GameObject obj)
     {
         return Utils.IsEnemy(obj);
-    }
-
-    // Detect keyboard status to decide player input
-    private void GetKeyboardInput()
-    {
-        // Detect orientation change
-        if (Input.GetKeyDown(this.keyRight)) this.facingRight = true;
-        else if (Input.GetKeyDown(this.keyLeft)) this.facingRight = false;
-
-        // Detect movement commands
-        this.moveLeft = Input.GetKey(this.keyLeft);
-        this.moveRight = Input.GetKey(this.keyRight);
-        this.jump = Input.GetKeyDown(this.keyUp);
-        this.drop = Input.GetKeyDown(this.keyDown);
-        if (this.allowSprint && this.sprintCD.stopped && Input.GetKeyDown(this.keySprint) && this.rigidbody.velocity.x != 0)
-        {
-            this.sprintTime.Reset();
-            this.sprintCD.Reset();
-            this.sprintingRight = this.facingRight;
-        }
-
-        // Detect attack commands
-        if (this.weaponController != null && this.canAttack && this.attackCD.stopped && Input.GetKeyDown(this.keyAttack))
-        {
-            this.weaponController.Attack();
-            this.attackCD.Reset();
-        }
     }
 
     // Check if player is on the ground
@@ -142,9 +102,6 @@ public class PlayerController : MovableController
 
     protected override void Move()
     {
-        // Get Player Commands
-        this.GetKeyboardInput();
-
         // Sprint if is currently sprinting (and ignore keyboard inputs)
         if (!sprintTime.stopped)
         {

@@ -32,9 +32,10 @@ public class Timer
 
     // Decreases the value by deltaTime * speed
     // If value is negative will increase the value instead
-    public bool Update()
+    public void Update()
     {
-        if (this.curValue > 0)
+        if (GameManager.instance.paused) return;
+        else if (this.curValue > 0)
         {
             this.curValue = Math.Max(this.curValue - Time.deltaTime * this.speed, 0);
         }
@@ -44,9 +45,9 @@ public class Timer
         }
         else
         {
-            return false;
+            return;
         }
-        return true;
+        return;
     }
 }
 

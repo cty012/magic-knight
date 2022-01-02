@@ -15,24 +15,22 @@ public static class JsonParser
 }
 
 // A json node. Can be object, array, or data
-public abstract class JsonNode
+public interface JsonNode
 {
-    public virtual JsonNodeType type { get; }
-    public JsonNode() { }
-    public JsonNode(string jsonString) { }
-    public abstract string GetJsonString();
-    public abstract string GetDecoratedJsonString();
+    public JsonNodeType GetNodeType();
+    public string GetJsonString();
+    public string GetDecoratedJsonString();
 }
 
 // An array node
 public class JsonArrayNode : JsonNode
 {
-    public override JsonNodeType type { get { return JsonNodeType.ARRAY_NODE; } }
+    public JsonNodeType GetNodeType() { return JsonNodeType.ARRAY_NODE; }
     public readonly List<JsonNode> values = new List<JsonNode>();
 
     public JsonArrayNode() : base() { }
 
-    public JsonArrayNode(string jsonString) : base(jsonString)
+    public JsonArrayNode(string jsonString)
     {
         jsonString = jsonString.CleanTrim();
         if (JsonNodeFactory.GetNodeType(jsonString) != JsonNodeType.ARRAY_NODE) return;
@@ -46,13 +44,13 @@ public class JsonArrayNode : JsonNode
         }
     }
     
-    public override string GetJsonString()
+    public string GetJsonString()
     {
         return "[" + string.Join(",", this.values.Select(it => it.GetJsonString())) + "]";
     }
 
     // More organized string, easier to look
-    public override string GetDecoratedJsonString()
+    public string GetDecoratedJsonString()
     {
         if (this.values.Count == 0) return "[]";
         return "[\n    " + string.Join(",\n", this.values.Select(it => it.GetDecoratedJsonString())).Replace("\n", "\n    ") + "\n]";
@@ -62,12 +60,12 @@ public class JsonArrayNode : JsonNode
 // An object node
 public class JsonObjectNode : JsonNode
 {
-    public override JsonNodeType type { get { return JsonNodeType.OBJECT_NODE; } }
+    public JsonNodeType GetNodeType() { return JsonNodeType.OBJECT_NODE; }
     public readonly Dictionary<string, JsonNode> values = new Dictionary<string, JsonNode>();
 
     public JsonObjectNode() : base() { }
 
-    public JsonObjectNode(string jsonString) : base(jsonString)
+    public JsonObjectNode(string jsonString)
     {
         jsonString = jsonString.CleanTrim();
         if (JsonNodeFactory.GetNodeType(jsonString) != JsonNodeType.OBJECT_NODE) return;
@@ -84,29 +82,39 @@ public class JsonObjectNode : JsonNode
         }
     }
 
-    public override string GetJsonString()
+    public string GetJsonString()
     {
         return "{" + string.Join(",", this.values.Select(it => string.Format("\"{0}\":{1}", it.Key, it.Value.GetJsonString()))) + "}";
     }
 
-    public override string GetDecoratedJsonString()
+    public string GetDecoratedJsonString()
     {
         if (this.values.Count == 0) return "{}";
         return "{\n    " + string.Join(",\n", this.values.Select(it => string.Format("\"{0}\": {1}", it.Key, it.Value.GetDecoratedJsonString()))).Replace("\n", "\n    ") + "\n}";
     }
 }
 
+public interface IJsonDataNode : JsonNode
+{
+    public object GetValue();
+}
+
 // A data node. Supports float, bool, and string
 // If you need int values just convert from float
 // Weird values are recognized as bool(false)
-public class JsonDataNode<T> : JsonNode
+public class JsonDataNode<T> : IJsonDataNode
 {
-    public override JsonNodeType type { get { return JsonNodeType.DATA_NODE; } }
+    public JsonNodeType GetNodeType() { return JsonNodeType.DATA_NODE; }
     public T value;
 
     public JsonDataNode() : base() { }
 
-    public JsonDataNode(string jsonString) : base(jsonString)
+    public object GetValue()
+    {
+        return value;
+    }
+
+    public JsonDataNode(string jsonString)
     {
         jsonString = jsonString.CleanTrim();
         if (JsonNodeFactory.GetNodeType(jsonString) != JsonNodeType.DATA_NODE) return;
@@ -127,12 +135,12 @@ public class JsonDataNode<T> : JsonNode
         }
     }
 
-    public override string GetJsonString()
+    public string GetJsonString()
     {
         return string.Format(typeof(string).Equals(typeof(T)) ? "\"{0}\"" : "{0}", this.value.ToString());
     }
 
-    public override string GetDecoratedJsonString()
+    public string GetDecoratedJsonString()
     {
         return string.Format(typeof(string).Equals(typeof(T)) ? "\"{0}\"" : "{0}", this.value.ToString());
     }
